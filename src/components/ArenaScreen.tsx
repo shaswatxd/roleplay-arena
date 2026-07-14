@@ -114,6 +114,30 @@ export default function ArenaScreen() {
     })
   }
 
+  const shareDebate = () => {
+    const lines = [`⚔️ ROLEPLAY ARENA — DEBATE`, `Topic: ${topic}`, `Characters: ${characters.map(c => c.name).join(' vs ')}`, `${'─'.repeat(40)}`, '']
+    let lastRound = 0
+    for (const msg of localMessages) {
+      if (!msg.charId || msg.charId === 'sys') continue
+      if (msg.round !== lastRound) {
+        lines.push(`\n── Round ${msg.round} ──\n`)
+        lastRound = msg.round
+      }
+      lines.push(`${msg.emoji || ''} ${msg.name}: ${msg.text}`)
+      lines.push('')
+    }
+    lines.push(`${'─'.repeat(40)}`)
+    lines.push('Made with RolePlay Arena ⚔️')
+    const text = lines.join('\n')
+    if (navigator.share) {
+      navigator.share({ title: `Debate: ${topic}`, text }).catch(() => {})
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Debate copied to clipboard!')
+      }).catch(() => {})
+    }
+  }
+
   const progress = currentRound > 0 ? ((currentRound - 1) / maxRounds) * 100 : 0
 
   return (
@@ -222,8 +246,8 @@ export default function ArenaScreen() {
               <>Next Round <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>
             )}
           </button>
-          <button onClick={() => {}} className="btn btn-secondary btn-icon btn-sm" aria-label="Export" title="Export">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <button onClick={shareDebate} className="btn btn-secondary btn-icon btn-sm" aria-label="Share" title="Share debate">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           </button>
         </div>
       </div>

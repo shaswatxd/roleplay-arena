@@ -6,6 +6,7 @@ import { PROVIDERS } from '../data/providers'
 import { detectPerson } from '../utils/detector'
 import type { Character } from '../data/presets'
 import { avatarHtml } from '../utils/helpers'
+import CharacterBioModal from './CharacterBioModal'
 
 const QUICK_TOPICS = [
   'Should AI replace human creativity?',
@@ -89,6 +90,7 @@ function CharactersSection({
   removeCharacter: (idx: number) => void
 }) {
   const [showModal, setShowModal] = useState(false)
+  const [bioChar, setBioChar] = useState<Character | null>(null)
 
   return (
     <div className="card p-5 flex flex-col gap-4">
@@ -104,6 +106,7 @@ function CharactersSection({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => togglePreset(p.id)}
+                onContextMenu={e => { e.preventDefault(); setBioChar(p) }}
                 className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg bg-bg-glass border cursor-pointer transition-all duration-150 ${
                   selected ? 'border-accent bg-accent/10 shadow-[0_0_12px_rgba(124,58,237,0.1)]' : 'border-border-subtle hover:bg-bg-card-hover hover:border-border-default'
                 }`}
@@ -115,6 +118,7 @@ function CharactersSection({
             )
           })}
         </div>
+        <div className="text-[0.625rem] text-text-tertiary mt-1.5 font-mono">Tap to select • Long-press for bio</div>
       </div>
       <div>
         <button onClick={() => setShowModal(true)} className="btn btn-ghost btn-sm w-full">
@@ -124,6 +128,9 @@ function CharactersSection({
       </div>
       <SelectedCharacters characters={characters} onRemove={removeCharacter} />
       {showModal && <CustomCharModal onClose={() => setShowModal(false)} />}
+      <AnimatePresence>
+        {bioChar && <CharacterBioModal character={bioChar} onClose={() => setBioChar(null)} />}
+      </AnimatePresence>
     </div>
   )
 }
