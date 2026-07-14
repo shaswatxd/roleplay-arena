@@ -498,45 +498,7 @@ body {
   width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
 }
 
-.api-card {
-  display: flex; flex-direction: column; gap: var(--space-5);
-}
-.api-card .section-title { margin-bottom: 0; }
 
-.provider-tabs {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-}
-.provider-tab {
-  padding: 8px 12px; border-radius: var(--radius-md);
-  background: var(--bg-glass); border: 1px solid var(--border-subtle);
-  color: var(--text-tertiary); font-family: var(--font-mono);
-  font-size: 0.6875rem; cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-  text-align: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.provider-tab:hover { color: var(--text-secondary); border-color: var(--border-default); }
-.provider-tab.active {
-  background: var(--info-bg); border-color: var(--accent);
-  color: var(--accent-light); box-shadow: 0 0 12px rgba(124,58,237,0.15);
-}
-
-.api-hint {
-  font-size: 0.75rem; color: var(--text-tertiary);
-  display: flex; align-items: center; gap: 6px;
-}
-.api-link {
-  color: var(--accent-cyan); text-decoration: none;
-  font-family: var(--font-mono);
-  transition: color var(--duration-fast);
-}
-.api-link:hover { color: #67e8f9; text-decoration: underline; }
-
-.security-note {
-  display: flex; align-items: center; gap: var(--space-2);
-  font-size: 0.6875rem; color: var(--text-tertiary);
-  font-family: var(--font-mono); justify-content: center;
-}
 
 /* ══════════════════════════════════════════════
    SCREEN 2: SETUP
@@ -1030,33 +992,10 @@ body {
         </div>
       </div>
 
-      <div class="card card-glass api-card">
-        <div class="section-header">
-          <div class="section-icon">⚡</div>
-          <div class="section-heading">Connect your API</div>
-        </div>
-        <div>
-          <div class="provider-tabs">
-            <button class="provider-tab active" onclick="selectProvider('gemini')">Gemini</button>
-            <button class="provider-tab" onclick="selectProvider('groq')">Groq</button>
-            <button class="provider-tab" onclick="selectProvider('openrouter')">OpenRouter</button>
-          </div>
-        </div>
-        <div class="input-group">
-          <label class="label">API Key</label>
-          <input type="password" id="api-key-input" class="input" placeholder="Paste your API key here..." autocomplete="off" />
-        </div>
-        <div class="api-hint" id="api-key-hint">
-          Get free key: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="api-link" id="api-link-href">aistudio.google.com</a>
-        </div>
-        <div class="security-note">
-          <span>🔒</span> Key stored locally — never sent to our servers
-        </div>
-        <button class="btn btn-primary btn-full btn-lg" onclick="handleLandingContinue()">
-          Enter the Arena
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        </button>
-      </div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="goTo('setup')" style="margin-top:8px;">
+        Enter the Arena
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
     </div>
   </section>
 
@@ -1343,7 +1282,6 @@ body {
 // STATE
 // ══════════════════════════════════════════════
 const STATE = {
-  provider: 'gemini',
   apiKey: '',
   topic: '',
   characters: [],
@@ -1409,43 +1347,11 @@ const EMOJI_OPTS = ['😈','🤖','👽','🦁','🔥','⚡','💀','🎭','🧠
 // INIT
 // ══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
-  loadConfig();
-  loadFromStorage();
+  STATE.apiKey = (window.RPA_CONFIG && window.RPA_CONFIG.groqKey) || '';
   renderPresetGrid();
   renderEmojiPicker();
   renderColorPicker();
 });
-
-function loadConfig() {
-  const cfg = window.RPA_CONFIG;
-  if (!cfg) return;
-  STATE.defaultProvider = cfg.defaultProvider || 'groq';
-  STATE.configKeys = cfg.keys || {};
-}
-
-function loadFromStorage() {
-  loadConfig();
-  const cfg = window.RPA_CONFIG;
-  const saved = localStorage.getItem('rpa_settings');
-  let savedKey = null;
-  if (saved) {
-    try { const s = JSON.parse(saved); if (s.apiKey) savedKey = s.apiKey; STATE.provider = s.provider || STATE.provider; } catch(e) {}
-  }
-  if (savedKey) {
-    STATE.apiKey = savedKey;
-  } else if (cfg && cfg.keys) {
-    STATE.provider = cfg.defaultProvider || 'groq';
-    STATE.apiKey = cfg.keys[STATE.provider] || '';
-  }
-  if (STATE.apiKey) {
-    document.getElementById('api-key-input').value = STATE.apiKey;
-    selectProvider(STATE.provider, false);
-  }
-}
-
-function saveToStorage() {
-  localStorage.setItem('rpa_settings', JSON.stringify({ provider: STATE.provider, apiKey: STATE.apiKey }));
-}
 
 // ══════════════════════════════════════════════
 // NAVIGATION
@@ -1459,43 +1365,6 @@ function goTo(screenId) {
   requestAnimationFrame(() => {
     target.style.animation = '';
   });
-}
-
-// ══════════════════════════════════════════════
-// PROVIDER SELECTION
-// ══════════════════════════════════════════════
-const PROVIDER_LINKS = {
-  gemini:     { url:'https://aistudio.google.com/app/apikey', label:'aistudio.google.com' },
-  groq:       { url:'https://console.groq.com/keys',          label:'console.groq.com' },
-  openrouter: { url:'https://openrouter.ai/keys',             label:'openrouter.ai/keys' },
-};
-
-function selectProvider(name, updateInput=true) {
-  STATE.provider = name;
-  document.querySelectorAll('.provider-tab').forEach((b,i) => {
-    b.classList.toggle('active', ['gemini','groq','openrouter'][i] === name);
-  });
-  const info = PROVIDER_LINKS[name];
-  document.getElementById('api-key-hint').innerHTML =
-    `Get free key: <a href="${info.url}" target="_blank" class="api-link">${info.label}</a>`;
-  if (updateInput) {
-    const cfg = window.RPA_CONFIG;
-    const key = cfg?.keys?.[name] || '';
-    document.getElementById('api-key-input').value = key;
-    if (key) STATE.apiKey = key;
-  }
-}
-
-// ══════════════════════════════════════════════
-// LANDING → SETUP
-// ══════════════════════════════════════════════
-function handleLandingContinue() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key) { showToast('Please enter your API key first', 'error'); return; }
-  STATE.apiKey = key;
-  saveToStorage();
-  goTo('setup');
-  renderSelectedChars();
 }
 
 // ══════════════════════════════════════════════
@@ -1708,7 +1577,7 @@ async function generateResponse(char) {
   const context = buildContext(char);
   let response;
   try {
-    response = await callAI(context, char);
+    response = await callGroq(context);
   } catch(err) {
     removeEl(typingEl);
     highlightAvatar(char.id, false);
@@ -1768,62 +1637,12 @@ Do NOT repeat what others said verbatim — respond, react, challenge, or build 
 ${STATE.currentRound === STATE.maxRounds ? 'This is the FINAL round. Make your strongest closing argument.' : ''}`;
 }
 
-async function callAI(prompt, char) {
-  if (STATE.provider === 'gemini') return await callGemini(prompt);
-  if (STATE.provider === 'groq') return await callGroq(prompt);
-  return await callOpenRouter(prompt);
-}
-
-async function callGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${STATE.apiKey}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.92, maxOutputTokens: 300 },
-      safetySettings: [
-        { category:'HARM_CATEGORY_HARASSMENT', threshold:'BLOCK_ONLY_HIGH' },
-        { category:'HARM_CATEGORY_HATE_SPEECH', threshold:'BLOCK_ONLY_HIGH' },
-      ]
-    })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({error:{message:'Unknown error'}}));
-    throw new Error(err?.error?.message || `HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '...';
-}
-
 async function callGroq(prompt) {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + STATE.apiKey },
     body: JSON.stringify({
       model: 'llama-3.1-8b-instant',
-      messages: [{ role:'user', content: prompt }],
-      max_tokens: 300, temperature: 0.92,
-    })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({error:{message:'Unknown error'}}));
-    throw new Error(err?.error?.message || `HTTP ${res.status}`);
-  }
-  const data = await res.json();
-  return data?.choices?.[0]?.message?.content?.trim() || '...';
-}
-
-async function callOpenRouter(prompt) {
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type':'application/json',
-      'Authorization':'Bearer ' + STATE.apiKey,
-      'HTTP-Referer': window.location.href,
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/llama-3.1-8b-instruct:free',
       messages: [{ role:'user', content: prompt }],
       max_tokens: 300, temperature: 0.92,
     })
@@ -2019,10 +1838,7 @@ Transcript:
 ${transcript}`;
 
   try {
-    let summary;
-    if (STATE.provider === 'gemini')     summary = await callGemini(prompt);
-    else if (STATE.provider === 'groq')  summary = await callGroq(prompt);
-    else                                 summary = await callOpenRouter(prompt);
+    const summary = await callGroq(prompt);
     summaryEl.textContent = summary;
   } catch(e) {
     summaryEl.textContent = 'Summary generation failed. You can still export the full transcript.';
