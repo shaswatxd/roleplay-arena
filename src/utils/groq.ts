@@ -18,7 +18,7 @@ const lengthMap: Record<string, string> = {
 
 const langMap: Record<string, string> = {
   english:  'Respond ONLY in English.',
-  hinglish: 'Respond in Hinglish — natural mix of Hindi and English, like how urban Indians text. Use Devanagari Hindi words written in Roman script mixed with English. Be natural, not forced.',
+  hinglish: 'Respond in Hinglish — natural mix of Hindi and English, like how urban Indians text. Use Devanagari Hindi words written in Roman script mixed with English. Be natural, not forced. Example: "yaar ye toh bohot galat hai bhai, tu soch ke bol na" — NOT "यह बहुत गलत है (this is very wrong)". Never write Hindi in Devanagari script for Hinglish mode.',
   hindi:    'पूरा जवाब Hindi में दो। Respond entirely in Hindi (Roman script is fine).',
   urdu:     'Respond in Urdu (Roman script). Use natural Urdu expressions.',
 }
@@ -56,6 +56,7 @@ RULES:
 - Use your REAL dialect and natural way of speaking as described above.
 - NEVER put English translations in parentheses. Do NOT translate your words. Speak ONLY in the requested language, naturally, the way a real person would.
 - No brackets, no footnotes, no "(English translation)" — just pure dialogue.
+- For Hinglish: write like texting friends — "bhai ye kya bol raha hai", "arre nahi yaar", "dekh na kitna funny hai". NEVER "यह क्या बोल रहा है (what is he saying)".
 
 Now give your response as ${char.name}. ${lengthMap[length] || lengthMap.medium}
 Language preference: ${langRule}
