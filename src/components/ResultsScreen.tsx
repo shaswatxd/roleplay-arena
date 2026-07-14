@@ -1,0 +1,163 @@
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { useDebate } from '../DebateContext'
+import { avatarHtml } from '../utils/helpers'
+import { callAI } from '../utils/groq'
+
+export default function ResultsScreen() {
+  const { topic, characters, messages, maxRounds, style, length, language, apiKeys, activeProvider, goTo } = useDebate()
+  const [summary, setSummary] = useState('')
+
+  useEffect(() => {
+    generateSummary()
+  }, [])
+
+  async function generateSummary() {
+    const transcript = messages.map(m => `${m.name}: "${m.text}"`).join('\n')
+    const prompt = `Below is a debate transcript about "${topic}". Write a 3-4 sentence summary of who argued what, what the key points were, and who made the most compelling arguments. Be specific and fair. Write in ${language === 'hinglish' ? 'Hinglish (Hindi+English mix)' : language}.
+
+Transcript:
+${transcript}`
+    try {
+      const { text } = await callAI(prompt, apiKeys, activeProvider)
+      setSummary(text)
+    } catch {
+      setSummary('Summary generation failed. You can still export the full transcript.')
+    }
+  }
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="screen-active flex flex-col flex-1 p-6 gap-5 overflow-y-auto pb-[calc(1.5rem+var(--safe-bottom,0px))]"
+    >
+      <div className="text-center py-6 pb-4">
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+          className="text-5xl block mb-4"
+        >🏆</motion.span>
+        <h2 className="font-sans text-3xl font-extrabold tracking-tight mb-2">
+          <span className="bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent">Debate Complete</span>
+        </h2>
+        <div className="text-sm text-text-secondary max-w-[360px] mx-auto">
+          &ldquo;{topic}&rdquo; — {characters.length} characters, {maxRounds} rounds
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-accent/10 to-accent-cyan/5 border border-accent/15 rounded-2xl p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-md flex items-center justify-center text-sm flex-shrink-0 bg-accent/15">📝</div>
+          <div className="font-sans text-[0.9375rem] font-semibold text-text-primary">AI Summary</div>
+        </div>
+        <div className="text-sm leading-relaxed text-text-secondary">
+          {summary || <span className="text-text-tertiary">Generating AI summary...</span>}
+        </div>
+      </div>
+
+      <div className="bg-bg-card border border-border-default rounded-xl p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-md flex items-center justify-center text-sm flex-shrink-0 bg-accent/15">🎭</div>
+          <div className="font-sans text-[0.9375rem] font-semibold text-text-primary">Character Stats</div>
+        </div>
+        <div className="flex flex-col gap-2">
+          {characters.map(c => {
+            const msgs = messages.filter(m => m.charId === c.id)
+            const totalWords = msgs.reduce((acc, m) => acc + (m.text ? m.text.split(/\s+/).length : 0), 0)
+            return (
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg bg-bg-glass border border-border-subtle hover:bg-bg-card-hover hover:border-border-default transition-all duration-150"
+              >
+                <span className="w-9 h-9 rounded-md overflow-hidden flex items-center justify-center flex-shrink-0 text-2xl" style={{ background: c.image ? c.color + '22' : 'none' }} dangerouslySetInnerHTML={{ __html: avatarHtml(c) }} />
+                <div className="flex-1">
+                  <div className="font-mono text-sm font-medium" style={{ color: c.color }}>{c.name}</div>
+                  <div className="text-xs text-text-tertiary mt-px">{c.role}</div>
+                </div>
+                <div className="font-mono text-xs text-text-tertiary text-right flex-shrink-0 leading-relaxed">{msgs.length} turns<br />{totalWords} words</div>
+              </motion.div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          <button onClick={() => copyTranscript()} className="btn btn-secondary btn-sm flex-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+          <button onClick={() => exportTxt()} className="btn btn-secondary btn-sm flex-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export TXT
+          </button>
+        </div>
+        <button onClick={() => goTo('setup')} className="btn btn-primary w-full">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          New Debate
+        </button>
+        <button onClick={() => {/*rematch*/}} className="btn btn-secondary w-full">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          Rematch (same topic)
+        </button>
+      </div>
+    </motion.section>
+  )
+
+  function buildTranscript() {
+    const lines = [
+      `ROLEPLAY ARENA — DEBATE TRANSCRIPT`,
+      `Topic: ${topic}`,
+      `Date: ${new Date().toLocaleString()}`,
+      `Characters: ${characters.map(c => c.name).join(', ')}`,
+      `Rounds: ${maxRounds} | Style: ${style}`,
+      `${'─'.repeat(60)}`,
+      '',
+    ]
+    let lastRound = 0
+    for (const msg of messages) {
+      if (!msg.charId || msg.charId === 'sys') continue
+      if (msg.round !== lastRound) {
+        lines.push(`\n═══ Round ${msg.round} ═══\n`)
+        lastRound = msg.round
+      }
+      lines.push(`${msg.emoji} ${msg.name}:`)
+      lines.push(msg.text)
+      lines.push('')
+    }
+    if (summary) {
+      lines.push(`${'─'.repeat(60)}`)
+      lines.push('AI SUMMARY:')
+      lines.push(summary)
+    }
+    return lines.join('\n')
+  }
+
+  function copyTranscript() {
+    const text = buildTranscript()
+    navigator.clipboard.writeText(text).then(() => {
+      // toast
+    }).catch(() => {})
+  }
+
+  function exportTxt() {
+    const text = buildTranscript()
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `debate-${slugify(topic)}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function slugify(str: string) {
+    return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)
+  }
+}

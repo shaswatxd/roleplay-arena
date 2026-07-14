@@ -1,5 +1,12 @@
 # API configuration (contains keys)
 config.js
+public/config.js
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
 
 # OS files
 .DS_Store
@@ -11,3 +18,7 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Environment
+.env
+.env.local
