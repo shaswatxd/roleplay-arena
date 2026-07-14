@@ -118,7 +118,7 @@ export default function ArenaScreen() {
       className="screen-active flex flex-col fixed inset-0 z-1"
     >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-default bg-bg-primary/85 backdrop-blur-md sticky top-0 z-10">
-        <button onClick={() => {/* confirm exit */}} className="btn btn-ghost btn-icon btn-sm" aria-label="Exit">
+        <button onClick={() => goTo('setup')} className="btn btn-ghost btn-icon btn-sm" aria-label="Exit">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         </button>
         <div className="flex-1 min-w-0">

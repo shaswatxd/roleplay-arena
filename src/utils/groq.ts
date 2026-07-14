@@ -54,6 +54,8 @@ RULES:
 - React naturally to the topic. If it's adult/funny, adapt in character.
 - Do NOT repeat what others said.
 - Use your REAL dialect and natural way of speaking as described above.
+- NEVER put English translations in parentheses. Do NOT translate your words. Speak ONLY in the requested language, naturally, the way a real person would.
+- No brackets, no footnotes, no "(English translation)" — just pure dialogue.
 
 Now give your response as ${char.name}. ${lengthMap[length] || lengthMap.medium}
 Language preference: ${langRule}
