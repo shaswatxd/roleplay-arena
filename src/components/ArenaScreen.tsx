@@ -32,6 +32,11 @@ export default function ArenaScreen() {
 
   messagesRef.current = localMessages
 
+  const log = (msg: string) => {
+    console.log(msg)
+    ;(window as any).__arenaLogs = [...((window as any).__arenaLogs || []), msg]
+  }
+
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
       if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight
@@ -65,17 +70,17 @@ export default function ArenaScreen() {
     for (const char of characters) {
       if (pausedRef.current) break
       setTypingChar(char)
-      const ctx = buildContext(char, topic, round, maxRounds, style, length, language, messagesRef.current as Message[])
-      console.log(`[Arena] Starting ${char.name} R${round}, prompt ${ctx.length} chars`)
       try {
+        const ctx = buildContext(char, topic, round, maxRounds, style, length, language, messagesRef.current as Message[])
+        log(`[Arena] Calling AI for ${char.name} R${round}`)
         const { text, providerId } = await callAI(ctx, apiKeys, activeProvider)
-        console.log(`[Arena] Got ${char.name}: ${text?.substring(0, 80)}... (${providerId})`)
+        log(`[Arena] Got ${char.name}: ${text?.substring(0, 80)}... (${providerId})`)
         const finalText = (!text || text.trim().length === 0 || text === '...') 
           ? `[${char.name} passed]` 
           : text
         setLocalMessages(prev => [...prev, { charId: char.id, name: char.name, emoji: char.emoji, image: char.image, color: char.color, round, text: finalText }])
       } catch (err) {
-        console.error('[Arena] AI Error:', err)
+        log(`[Arena] Error for ${char.name}: ${err}`)
         setLocalMessages(prev => [...prev, { charId: 'sys', text: `⚠️ ${char.name}: ${err instanceof Error ? err.message : 'API failed'}`, round }])
         pausedRef.current = true
         setLocalPaused(true)
