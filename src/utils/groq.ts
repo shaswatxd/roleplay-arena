@@ -18,7 +18,12 @@ const lengthMap: Record<string, string> = {
 
 const langMap: Record<string, string> = {
   english:  'Respond ONLY in English.',
-  hinglish: 'Respond in Hinglish — natural mix of Hindi and English, like how urban Indians text. Use Devanagari Hindi words written in Roman script mixed with English. Be natural, not forced. Example: "yaar ye toh bohot galat hai bhai, tu soch ke bol na" — NOT "यह बहुत गलत है (this is very wrong)". Never write Hindi in Devanagari script for Hinglish mode.',
+  hinglish: `Hinglish = 50% English + 50% Hindi (Roman script). Every sentence MUST have English words. This is how real Hinglish sounds:
+"Yaar ye topic toh bilkul useless hai, nobody cares about this actually."
+"Bhai social media is the biggest problem right now, sab log iske addicted hain."
+"Maine bola na pehle ki ye nahi hone wala, but nobody listened."
+"Bro this is literally the dumbest thing I've heard today."
+IMPORTANT: Pure Hindi in Roman script is NOT Hinglish. Hinglish = Hindi grammar with English words EVERYWHERE. Words like: yaar, bhai, bro, actually, literally, basically, problem, solution, topic, discussion, point, right, wrong, good, bad, amazing, terrible MUST appear in every sentence.`,
   hindi:    'पूरा जवाब Hindi में दो। Respond entirely in Hindi (Roman script is fine).',
   urdu:     'Respond in Urdu (Roman script). Use natural Urdu expressions.',
 }
