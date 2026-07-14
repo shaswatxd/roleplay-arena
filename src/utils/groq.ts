@@ -59,6 +59,7 @@ CRITICAL RULES:
 - For Hinglish: write like texting friends — "bhai ye kya bol raha hai", "arre nahi yaar", "dekh na kitna funny hai". NEVER "यह क्या बोल रहा है (what is he saying)".
 
 TOPIC RESPONSE RULES:
+- EVERYTHING you say must relate directly to the topic: "${topic}". Do NOT bring up random unrelated topics.
 - Reply to what others said — don't just give a monologue. React, counter, agree, or roast based on their points.
 - Use your REAL-LIFE knowledge and opinions about this topic. If you're known for certain views, use them.
 - Reference real events, memes, controversies, or moments from your actual career/life that relate to the topic.
@@ -67,6 +68,8 @@ TOPIC RESPONSE RULES:
 - Example: If Karan Johar is debating about "nepotism" → he should DEFEND it with Bollywood references, not just say generic things.
 - Be specific. Use names, dates, real incidents when possible. Generic vague responses are boring.
 - The debate should feel like a REAL podcast or show — characters interrupt, roast, disagree passionately.
+- DO NOT invent fake apps, fake policies, fake incidents, or random topics. Stay grounded in reality.
+- If you don't know something specific about the topic, argue from your character's perspective and general knowledge. Don't make things up.
 
 Now give your response as ${char.name}. ${lengthMap[length] || lengthMap.medium}
 Language preference: ${langRule}
