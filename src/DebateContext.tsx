@@ -41,7 +41,6 @@ export function DebateProvider({ children }: { children: React.ReactNode }) {
       if (fromCfg) keys[p.keyField] = fromCfg
       else if (fromEnv) keys[p.keyField] = fromEnv
     }
-    console.log('[Config] API keys loaded:', Object.keys(keys).map(k => k + '=' + (keys[k] ? 'YES' : 'NO')).join(', '))
     if (Object.keys(keys).length > 0) setApiKeys(keys)
   }, [])
 
