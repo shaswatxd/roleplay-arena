@@ -27,6 +27,10 @@ export default function ArenaScreen() {
   const [typingChar, setTypingChar] = useState<Character | null>(null)
   const feedRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(false)
+  const messagesRef = useRef<LocalMessage[]>([])
+  const roundInProgress = useRef(false)
+
+  messagesRef.current = localMessages
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -36,53 +40,49 @@ export default function ArenaScreen() {
 
   useEffect(() => { scrollToBottom() }, [localMessages, typingChar, scrollToBottom])
 
-  async function runRound() {
-    if (pausedRef.current) return
-
-    setLocalRound(prev => {
-      const next = prev + 1
-      if (next > maxRounds) {
-        setLocalRunning(false)
-        setDebateComplete(true)
-        setMessages(localMessages as Message[])
-        setCurrentRound(maxRounds)
-        finishDebate()
-        return prev
-      }
-      return next
-    })
-  }
-
   useEffect(() => {
-    if (currentRound > 0 && currentRound <= maxRounds) {
-      generateRound(currentRound)
-    }
-  }, [currentRound])
-
-  useEffect(() => {
-    if (currentRound === 0 && localMessages.length === 0) {
-      runRound()
+    if (localMessages.length === 0 && !roundInProgress.current) {
+      startNextRound(1)
     }
   }, [])
 
-  async function generateRound(round: number) {
+  async function startNextRound(round: number) {
+    if (roundInProgress.current) return
+    if (round > maxRounds) {
+      setLocalRunning(false)
+      setDebateComplete(true)
+      setMessages(messagesRef.current as Message[])
+      setCurrentRound(maxRounds)
+      finishDebate()
+      return
+    }
+
+    roundInProgress.current = true
     setLocalRunning(true)
-    addSysMessage(`⚔️ Round ${round} of ${maxRounds}`)
+    setLocalRound(round)
+    setLocalMessages(prev => [...prev, { charId: 'sys', text: `⚔️ Round ${round} of ${maxRounds}`, round }])
 
     for (const char of characters) {
       if (pausedRef.current) break
       setTypingChar(char)
-      const ctx = buildContext(char, topic, round, maxRounds, style, length, language, localMessages as Message[])
+      const ctx = buildContext(char, topic, round, maxRounds, style, length, language, messagesRef.current as Message[])
+      console.log(`[Arena] Starting ${char.name} R${round}, prompt ${ctx.length} chars`)
       try {
-        const { text } = await callAI(ctx, apiKeys, activeProvider)
-        const msg: LocalMessage = { charId: char.id, name: char.name, emoji: char.emoji, image: char.image, color: char.color, round, text }
-        setLocalMessages(prev => [...prev, msg])
+        const { text, providerId } = await callAI(ctx, apiKeys, activeProvider)
+        console.log(`[Arena] Got ${char.name}: ${text?.substring(0, 80)}... (${providerId})`)
+        const finalText = (!text || text.trim().length === 0 || text === '...') 
+          ? `[${char.name} passed]` 
+          : text
+        setLocalMessages(prev => [...prev, { charId: char.id, name: char.name, emoji: char.emoji, image: char.image, color: char.color, round, text: finalText }])
       } catch (err) {
-        console.error('AI Error:', err)
-        addSysMessage(`⚠️ Error: ${err instanceof Error ? err.message : 'API failed'}`)
+        console.error('[Arena] AI Error:', err)
+        setLocalMessages(prev => [...prev, { charId: 'sys', text: `⚠️ ${char.name}: ${err instanceof Error ? err.message : 'API failed'}`, round }])
         pausedRef.current = true
         setLocalPaused(true)
-        break
+        roundInProgress.current = false
+        setTypingChar(null)
+        setLocalRunning(false)
+        return
       }
       setTypingChar(null)
       await delay(300)
@@ -90,20 +90,18 @@ export default function ArenaScreen() {
 
     setTypingChar(null)
     setLocalRunning(false)
-  }
-
-  function addSysMessage(text: string) {
-    setLocalMessages(prev => [...prev, { charId: 'sys', text, round: currentRound }])
+    roundInProgress.current = false
   }
 
   const nextRound = () => {
+    if (roundInProgress.current) return
     if (currentRound >= maxRounds) {
       setMessages(localMessages as Message[])
       setCurrentRound(maxRounds)
       setDebateComplete(true)
       finishDebate()
     } else {
-      runRound()
+      startNextRound(currentRound + 1)
     }
   }
 
@@ -182,33 +180,31 @@ export default function ArenaScreen() {
       </div>
 
       <div ref={feedRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 scroll-smooth">
-        <AnimatePresence>
-          {localMessages.map((msg, i) => {
-            if (msg.charId === 'sys') {
-              return (
-                <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center font-mono text-[0.6875rem] text-text-tertiary tracking-wide py-1 flex items-center gap-3 before:flex-1 before:h-px before:bg-border-subtle after:flex-1 after:h-px after:bg-border-subtle">
-                  {msg.text}
-                </motion.div>
-              )
-            }
+        {localMessages.map((msg, i) => {
+          if (msg.charId === 'sys') {
             return (
-              <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }} className="flex gap-3 items-start">
-                <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center text-xl flex-shrink-0 border-2 border-white/6" style={{ background: msg.color + '15', borderColor: msg.color + '44' }}
-                  dangerouslySetInnerHTML={{ __html: avatarHtml(msg) }} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="font-mono text-sm font-medium" style={{ color: msg.color }}>{msg.name}</span>
-                    <span className="font-mono text-[0.625rem] text-text-tertiary">R{msg.round}</span>
-                  </div>
-                  <div className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg bg-white/4 border border-border-subtle text-sm leading-relaxed text-text-primary" style={{ borderLeft: `3px solid ${msg.color}` }} dangerouslySetInnerHTML={{ __html: escapeHtml(msg.text) }} />
-                </div>
-              </motion.div>
+              <div key={`sys-${i}`} className="text-center font-mono text-[0.6875rem] text-text-tertiary tracking-wide py-1 flex items-center gap-3 before:flex-1 before:h-px before:bg-border-subtle after:flex-1 after:h-px after:bg-border-subtle">
+                {msg.text}
+              </div>
             )
-          })}
-        </AnimatePresence>
+          }
+          return (
+            <div key={`msg-${i}`} className="flex gap-3 items-start">
+              <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center text-xl flex-shrink-0 border-2 border-white/6" style={{ background: msg.color + '15', borderColor: msg.color + '44' }}
+                dangerouslySetInnerHTML={{ __html: avatarHtml(msg) }} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="font-mono text-sm font-medium" style={{ color: msg.color }}>{msg.name}</span>
+                  <span className="font-mono text-[0.625rem] text-text-tertiary">R{msg.round}</span>
+                </div>
+                <div className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg bg-white/4 border border-border-subtle text-sm leading-relaxed text-text-primary" style={{ borderLeft: `3px solid ${msg.color}` }} dangerouslySetInnerHTML={{ __html: escapeHtml(msg.text) }} />
+              </div>
+            </div>
+          )
+        })}
 
         {typingChar && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3 items-start">
+          <div className="flex gap-3 items-start">
             <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center text-xl flex-shrink-0 border-2 border-white/6" style={{ background: typingChar.color + '15', borderColor: typingChar.color + '44' }}
               dangerouslySetInnerHTML={{ __html: avatarHtml(typingChar) }} />
             <div className="flex-1">
@@ -224,7 +220,7 @@ export default function ArenaScreen() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
 

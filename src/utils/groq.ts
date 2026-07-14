@@ -93,32 +93,44 @@ export async function callProvider(
   prompt: string,
   apiKey: string
 ): Promise<string> {
-  const res = await fetch(provider.endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + apiKey,
-      ...(provider.id === 'openrouter' ? { 'HTTP-Referer': 'https://roleplay-arena.app', 'X-Title': 'RolePlay Arena' } : {}),
-    },
-    body: JSON.stringify({
-      model: provider.model,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 500,
-      temperature: 0.92,
-    }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: { message: 'Unknown error' } }))
-    throw new Error(err?.error?.message || `HTTP ${res.status}`)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+  try {
+    const res = await fetch(provider.endpoint, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+        ...(provider.id === 'openrouter' ? { 'HTTP-Referer': 'https://roleplay-arena.app', 'X-Title': 'RolePlay Arena' } : {}),
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 500,
+        temperature: 0.92,
+      }),
+    })
+    clearTimeout(timeout)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: { message: 'Unknown error' } }))
+      throw new Error(err?.error?.message || `HTTP ${res.status}`)
+    }
+    const data = await res.json()
+    const msg = data?.choices?.[0]?.message
+    let text = msg?.content
+    if (!text && msg?.reasoning) {
+      const lines = msg.reasoning.split('\n').filter((l: string) => !l.includes('The user wants') && !l.includes('We need to') && !l.includes('Let me') && !l.includes('I will') && !l.includes('Must ensure') && !l.includes('Check constraints') && !l.includes('Provide') && !l.includes('Potential'))
+      text = lines.join('\n')
+    }
+    return text?.trim() || '...'
+  } catch (err) {
+    clearTimeout(timeout)
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('API timeout — server took too long to respond')
+    }
+    throw err
   }
-  const data = await res.json()
-  const msg = data?.choices?.[0]?.message
-  let text = msg?.content
-  if (!text && msg?.reasoning) {
-    const lines = msg.reasoning.split('\n').filter((l: string) => !l.includes('The user wants') && !l.includes('We need to') && !l.includes('Let me') && !l.includes('I will') && !l.includes('Must ensure') && !l.includes('Check constraints') && !l.includes('Provide') && !l.includes('Potential'))
-    text = lines.join('\n')
-  }
-  return text?.trim() || '...'
 }
 
 export async function callAI(
