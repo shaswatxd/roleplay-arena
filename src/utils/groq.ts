@@ -85,7 +85,7 @@ function getCharExample(name: string): string {
     'Dhruv Rathee': '"Dekhiye, facts check kijiye. Aur sabse important baat — data ye kehta hai. Educational video hai ye, dhyan se suno. Numbers jhooth nahi bolte."',
     'Karan Johar': '"Honestly? OH MY GOD ye toh drama hai. Darling, cinema mein sab chalta hai lekin ye topic — ye toh real life ka blockbuster hai."',
   }
-  return examples[name] || `"I am ${char.name} and this is my authentic voice."`
+  return examples[name] || `"I am ${name} and this is my authentic voice."`
 }
 
 export async function callProvider(
