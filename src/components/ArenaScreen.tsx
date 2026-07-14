@@ -135,11 +135,11 @@ export default function ArenaScreen() {
         </div>
       </div>
 
-      <div className="flex gap-2 px-4 py-2 border-b border-border-subtle bg-bg-primary/50 overflow-x-auto scrollbar-none">
+      <div className="flex gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 border-b border-border-subtle bg-bg-primary/50 overflow-x-auto scrollbar-none">
         {characters.map(c => (
-          <div key={c.id} className="flex flex-col items-center gap-0.5 flex-shrink-0 cursor-pointer px-1.5 py-1 rounded-md hover:bg-bg-glass transition-colors duration-150">
+          <div key={c.id} className="flex flex-col items-center gap-0.5 flex-shrink-0 cursor-pointer px-1.5 py-1 rounded-md hover:bg-bg-glass transition-colors duration-150 active:scale-95 min-w-[52px]">
             <motion.div
-              className="w-[38px] h-[38px] rounded-lg overflow-hidden flex items-center justify-center text-xl border-2 border-transparent"
+              className="w-9 h-9 sm:w-[38px] sm:h-[38px] rounded-lg overflow-hidden flex items-center justify-center text-lg sm:text-xl border-2 border-transparent"
               style={{ background: c.color + '15', borderColor: c.color + '33' }}
               animate={typingChar?.id === c.id ? { boxShadow: [`0 0 0 0 ${c.color}00`, `0 0 0 8px ${c.color}15`, `0 0 0 0 ${c.color}00`] } : {}}
               transition={{ duration: 1.2, repeat: typingChar?.id === c.id ? Infinity : 0, ease: 'easeInOut' }}
@@ -169,7 +169,7 @@ export default function ArenaScreen() {
                     <span className="font-mono text-sm font-medium" style={{ color: msg.color }}>{msg.name}</span>
                     <span className="font-mono text-[0.625rem] text-text-tertiary">R{msg.round}</span>
                   </div>
-                  <div className="px-4 py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg bg-white/4 border border-border-subtle text-sm leading-relaxed text-text-primary" style={{ borderLeft: `3px solid ${msg.color}` }} dangerouslySetInnerHTML={{ __html: escapeHtml(msg.text) }} />
+                  <div className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg bg-white/4 border border-border-subtle text-sm leading-relaxed text-text-primary" style={{ borderLeft: `3px solid ${msg.color}` }} dangerouslySetInnerHTML={{ __html: escapeHtml(msg.text) }} />
                 </div>
               </motion.div>
             )

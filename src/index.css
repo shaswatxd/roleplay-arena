@@ -51,6 +51,41 @@ body {
   overflow-x: hidden;
   line-height: 1.5;
   margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+@media (pointer: coarse) {
+  .btn, button, a {
+    min-height: 44px;
+  }
+  .btn-sm, .btn-icon {
+    min-height: auto;
+  }
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    border-radius: 12px;
+    padding: 1rem;
+  }
+  .p-5 { padding: 1rem; }
+  .px-5, .px-4 { padding-left: 0.85rem; padding-right: 0.85rem; }
+  .gap-5 { gap: 1rem; }
+  .text-base { font-size: 0.875rem; }
 }
 
 #root {

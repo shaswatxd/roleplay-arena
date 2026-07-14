@@ -95,7 +95,7 @@ function CharactersSection({
       <SectionHeader icon="🎭" title="Characters" subtitle="(2–4)" />
       <div>
         <label className="label">Preset characters</label>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-2 mt-1.5">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-1.5 mt-1.5 sm:grid-cols-[repeat(auto-fill,minmax(80px,1fr))] sm:gap-2 max-h-[240px] overflow-y-auto scrollbar-none">
           {PRESETS.map(p => {
             const selected = characters.some(c => c.id === p.id)
             return (
