@@ -78,7 +78,8 @@ export default function ArenaScreen() {
         const msg: LocalMessage = { charId: char.id, name: char.name, emoji: char.emoji, image: char.image, color: char.color, round, text }
         setLocalMessages(prev => [...prev, msg])
       } catch (err) {
-        addSysMessage('⚠️ Error: API failed — check your keys')
+        console.error('AI Error:', err)
+        addSysMessage(`⚠️ Error: ${err instanceof Error ? err.message : 'API failed'}`)
         pausedRef.current = true
         setLocalPaused(true)
         break
