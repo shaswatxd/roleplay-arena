@@ -1419,29 +1419,27 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadConfig() {
   const cfg = window.RPA_CONFIG;
   if (!cfg) return;
-  const saved = localStorage.getItem('rpa_settings');
-  if (!saved || !JSON.parse(saved).apiKey) {
-    STATE.provider = cfg.defaultProvider || 'gemini';
-    STATE.apiKey = cfg.keys[STATE.provider] || '';
-    if (STATE.apiKey) {
-      document.getElementById('api-key-input').value = STATE.apiKey;
-      selectProvider(STATE.provider, false);
-    }
-  }
+  STATE.defaultProvider = cfg.defaultProvider || 'groq';
+  STATE.configKeys = cfg.keys || {};
 }
 
 function loadFromStorage() {
+  loadConfig();
+  const cfg = window.RPA_CONFIG;
   const saved = localStorage.getItem('rpa_settings');
+  let savedKey = null;
   if (saved) {
-    try {
-      const s = JSON.parse(saved);
-      if (s.apiKey) {
-        STATE.provider = s.provider || 'gemini';
-        STATE.apiKey   = s.apiKey   || '';
-        document.getElementById('api-key-input').value = STATE.apiKey;
-        selectProvider(STATE.provider, false);
-      }
-    } catch(e){}
+    try { const s = JSON.parse(saved); if (s.apiKey) savedKey = s.apiKey; STATE.provider = s.provider || STATE.provider; } catch(e) {}
+  }
+  if (savedKey) {
+    STATE.apiKey = savedKey;
+  } else if (cfg && cfg.keys) {
+    STATE.provider = cfg.defaultProvider || 'groq';
+    STATE.apiKey = cfg.keys[STATE.provider] || '';
+  }
+  if (STATE.apiKey) {
+    document.getElementById('api-key-input').value = STATE.apiKey;
+    selectProvider(STATE.provider, false);
   }
 }
 
