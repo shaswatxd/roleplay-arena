@@ -29,6 +29,13 @@ IMPORTANT: Pure Hindi in Roman script is NOT Hinglish. Hinglish = Hindi grammar 
   urdu:     'Respond in Urdu (Roman script). Use natural Urdu expressions.',
 }
 
+const langReminder: Record<string, string> = {
+  english:  'Respond in English.',
+  hinglish: 'Respond in Hinglish — every sentence must mix Hindi and English (yaar, bhai, bro, actually, literally style). Do NOT write pure Hindi.',
+  hindi:    'पूरा जवाब सिर्फ Hindi में दो।',
+  urdu:     'Respond in Urdu (Roman script).',
+}
+
 const GLOBAL_RULES = `You are simulating one real character inside a live debate app. Before answering, silently reason through this order — do NOT output these steps, only your final in-character reply:
 1. Understand what the opponent(s) just argued.
 2. Find the actual point of disagreement.
@@ -126,9 +133,10 @@ export function buildPrompt(input: PromptInput): ChatMessage[] {
 
   if (correction) systemParts.push(`IMPORTANT CORRECTION: your previous attempt broke these rules: ${correction}. Do not repeat that mistake.`)
 
+  const langLine = langReminder[language] || langReminder.hinglish
   const transcript = memory.lines.length > 0
-    ? `WHAT OTHERS SAID SO FAR:\n${memory.lines.join('\n')}\n\nNow respond to what they said, in character, as ${dna.name}.`
-    : `You are speaking first on this topic. Respond in character as ${dna.name}.`
+    ? `WHAT OTHERS SAID SO FAR:\n${memory.lines.join('\n')}\n\nNow respond to what they said, in character, as ${dna.name}. ${langLine}`
+    : `You are speaking first on this topic. Respond in character as ${dna.name}. ${langLine}`
 
   return [
     { role: 'system', content: systemParts.join('\n\n') },
