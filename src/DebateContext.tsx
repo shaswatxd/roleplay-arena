@@ -6,6 +6,15 @@ import { resetDebateState } from './engine/debateEngine'
 
 const DebateContext = createContext<DebateContextType | null>(null)
 
+// Vite only inlines import.meta.env.VITE_X when referenced statically (literal dot access) —
+// a dynamic `import.meta.env['VITE_' + computedKey]` lookup never gets replaced at build time
+// and silently resolves to undefined in production. Keep this map's keys in sync with
+// AIProvider.keyField in data/providers.ts.
+const ENV_KEYS: Record<string, string | undefined> = {
+  groqKey: import.meta.env.VITE_GROQKEY,
+  openrouterKey: import.meta.env.VITE_OPENROUTERKEY,
+}
+
 export function DebateProvider({ children }: { children: React.ReactNode }) {
   const [screen, setScreen] = useState<ScreenName>('landing')
   const [topic, setTopic] = useState('')
@@ -29,7 +38,7 @@ export function DebateProvider({ children }: { children: React.ReactNode }) {
     const keys: Record<string, string> = {}
     for (const p of PROVIDERS) {
       const fromCfg = cfg[p.keyField]
-      const fromEnv = (import.meta as any)?.env?.['VITE_' + p.keyField.toUpperCase()]
+      const fromEnv = ENV_KEYS[p.keyField]
       if (fromCfg) keys[p.keyField] = fromCfg
       else if (fromEnv) keys[p.keyField] = fromEnv
     }
