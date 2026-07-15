@@ -32,7 +32,7 @@ export default function LandingScreen() {
                 background: 'linear-gradient(135deg, #7c3aed, transparent, #06b6d4)',
               }}
               animate={{ rotate: 360 }}
-              transition={{ duration: 6, repeat: Infinity, linear: true }}
+              transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
             <span className="text-4xl">⚔️</span>
           </motion.div>

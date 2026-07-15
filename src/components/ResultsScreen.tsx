@@ -3,12 +3,17 @@ import { motion } from 'framer-motion'
 import { useDebate } from '../DebateContext'
 import { avatarHtml } from '../utils/helpers'
 import { callAI } from '../utils/groq'
+import { judgeDebate } from '../engine/judge'
+import type { JudgeResult } from '../engine/judge'
 
 export default function ResultsScreen() {
   const { topic, characters, messages, maxRounds, style, length, language, apiKeys, activeProvider, goTo } = useDebate()
   const [summary, setSummary] = useState('')
   const [winner, setWinner] = useState<string | null>(null)
   const [showWinner, setShowWinner] = useState(false)
+  const [judgeResult, setJudgeResult] = useState<JudgeResult | null>(null)
+  const [judging, setJudging] = useState(false)
+  const [judgeError, setJudgeError] = useState('')
 
   useEffect(() => {
     generateSummary()
@@ -21,10 +26,23 @@ export default function ResultsScreen() {
 Transcript:
 ${transcript}`
     try {
-      const { text } = await callAI(prompt, apiKeys, activeProvider)
+      const { text } = await callAI([{ role: 'user', content: prompt }], apiKeys, activeProvider)
       setSummary(text)
     } catch {
       setSummary('Summary generation failed. You can still export the full transcript.')
+    }
+  }
+
+  async function runJudge() {
+    setJudging(true)
+    setJudgeError('')
+    try {
+      const result = await judgeDebate(topic, characters, messages, apiKeys, activeProvider)
+      setJudgeResult(result)
+    } catch (err) {
+      setJudgeError(err instanceof Error ? err.message : 'Judge failed to score this debate.')
+    } finally {
+      setJudging(false)
     }
   }
 
@@ -34,6 +52,7 @@ ${transcript}`
   }
 
   const winnerChar = characters.find(c => c.id === winner)
+  const judgeSuggestedChar = judgeResult?.suggestedWinner ? characters.find(c => c.id === judgeResult.suggestedWinner) : undefined
 
   return (
     <motion.section
@@ -65,6 +84,55 @@ ${transcript}`
         <div className="text-sm leading-relaxed text-text-secondary">
           {summary || <span className="text-text-tertiary">Generating AI summary...</span>}
         </div>
+      </div>
+
+      <div className="bg-bg-card border border-border-default rounded-xl p-5 flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md flex items-center justify-center text-sm flex-shrink-0 bg-accent/15">⚖️</div>
+            <div className="font-sans text-[0.9375rem] font-semibold text-text-primary">Debate Judge</div>
+          </div>
+          {!judgeResult && (
+            <button onClick={runJudge} disabled={judging} className="btn btn-secondary btn-sm disabled:opacity-50">
+              {judging ? 'Judging...' : 'Judge This Debate'}
+            </button>
+          )}
+        </div>
+        {judgeError && <div className="text-sm text-error">{judgeError}</div>}
+        {judgeResult && (
+          <div className="flex flex-col gap-3">
+            {characters.map(c => {
+              const score = judgeResult.scores[c.id]
+              if (!score) return null
+              const fields = ['logic', 'evidence', 'persuasiveness', 'consistency', 'historicalAuthenticity'] as const
+              const total = fields.reduce((sum, f) => sum + (score[f] || 0), 0) / fields.length
+              return (
+                <div key={c.id} className="flex flex-col gap-1.5 px-3 py-2.5 rounded-lg bg-bg-glass border border-border-subtle">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-sm font-medium" style={{ color: c.color }}>{c.name}</span>
+                    <span className="font-mono text-xs text-text-tertiary">{total.toFixed(0)}/100 avg</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {fields.map(f => (
+                      <div key={f} title={f} className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${score[f] || 0}%`, background: c.color }} />
+                      </div>
+                    ))}
+                  </div>
+                  {score.fallacies && score.fallacies.length > 0 && (
+                    <div className="text-[0.6875rem] text-text-tertiary">Fallacies noted: {score.fallacies.join(', ')}</div>
+                  )}
+                </div>
+              )
+            })}
+            {judgeResult.notes && <div className="text-sm text-text-secondary italic">{judgeResult.notes}</div>}
+            {judgeResult.closeCall || !judgeSuggestedChar ? (
+              <div className="text-sm text-text-tertiary font-mono">Too close to call.</div>
+            ) : (
+              <div className="text-sm font-medium" style={{ color: judgeSuggestedChar.color }}>Judge's pick: {judgeSuggestedChar.name}</div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-bg-card border border-border-default rounded-xl p-5 flex flex-col gap-4">

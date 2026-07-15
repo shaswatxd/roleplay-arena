@@ -1,102 +1,12 @@
-import type { Character, Message } from '../types'
+import type { ChatMessage } from '../types'
 import { PROVIDERS } from '../data/providers'
 import type { AIProvider } from '../data/providers'
 
-const styleMap: Record<string, string> = {
-  formal:     'a formal parliamentary debate with structured arguments',
-  casual:     'a casual, natural conversation between friends',
-  aggressive: 'a heated argument where everyone is passionate and interrupts',
-  socratic:   'a Socratic dialogue focused on questioning assumptions',
-  comedy:     'a comedy roast where everyone is funny but makes real points',
-}
-
-const lengthMap: Record<string, string> = {
-  short:  '1-2 sentences maximum. Be very brief.',
-  medium: '2-4 sentences. Make one or two key points.',
-  long:   'One full paragraph. Develop your argument with evidence or examples.',
-}
-
-const langMap: Record<string, string> = {
-  english:  'Respond ONLY in English.',
-  hinglish: `Hinglish = 50% English + 50% Hindi (Roman script). Every sentence MUST have English words. This is how real Hinglish sounds:
-"Yaar ye topic toh bilkul useless hai, nobody cares about this actually."
-"Bhai social media is the biggest problem right now, sab log iske addicted hain."
-"Maine bola na pehle ki ye nahi hone wala, but nobody listened."
-"Bro this is literally the dumbest thing I've heard today."
-IMPORTANT: Pure Hindi in Roman script is NOT Hinglish. Hinglish = Hindi grammar with English words EVERYWHERE. Words like: yaar, bhai, bro, actually, literally, basically, problem, solution, topic, discussion, point, right, wrong, good, bad, amazing, terrible MUST appear in every sentence.`,
-  hindi:    'पूरा जवाब Hindi में दो। Respond entirely in Hindi (Roman script is fine).',
-  urdu:     'Respond in Urdu (Roman script). Use natural Urdu expressions.',
-}
-
-export function buildContext(
-  char: Character,
-  topic: string,
-  currentRound: number,
-  maxRounds: number,
-  style: string,
-  length: string,
-  language: string,
-  messages: Message[]
-): string {
-  const prevMessages = messages.slice(-8).map(m => `${m.name}: "${m.text}"`).join('\n')
-
-  const langRule = langMap[language] || langMap.hinglish
-
-  const charExample = getCharExample(char.name)
-
-  return `ROLEPLAY: You are EXACTLY ${char.name}. ${char.role}.
-YOUR VOICE: ${char.style || 'Natural and authentic.'}
-
-EXAMPLE OF HOW YOU SPEAK:
-${charExample}
-
-DEBATE FORMAT: ${styleMap[style] || styleMap.casual}
-TOPIC: "${topic}"
-ROUND: ${currentRound} of ${maxRounds}
-
-${prevMessages ? `WHAT OTHERS SAID:\n${prevMessages}\n\nNow respond to what they said.` : 'You are speaking first on this topic.'}
-
-STRICT RULES — BREAKING THESE RUINS THE DEBATE:
-1. You ARE ${char.name}. Speak ONLY as them. Never break character.
-2. Every sentence must relate to the topic: "${topic}"
-3. React to what others said — argue, roast, agree, counter. Don't give monologues.
-4. Use your REAL catchphrases, speech patterns, and way of talking from the example above.
-5. NO English translations in brackets. NO "(translation)". Just pure natural dialogue.
-6. NO fake apps, fake policies, or made-up incidents. Stay real.
-7. NO "I cannot respond" or "As an AI". You are a real person in this debate.
-8. Keep it ${lengthMap[length] || lengthMap.medium}
-${currentRound === maxRounds ? '9. FINAL ROUND — make your strongest closing argument.' : ''}
-
-LANGUAGE: ${langRule}
-Now respond as ${char.name}:`
-}
-
-function getCharExample(name: string): string {
-  const examples: Record<string, string> = {
-    'Samay Raina': '"Arre yaar, ye toh blunder hai bhai. Chess mein bhi aur life mein bhi. Tera argument ka rating 800 hai, mere chess se bhi kam."',
-    'Ranveer Allahbadia': '"So guys, let me tell you something. The real question is — are you disciplined enough to even understand this topic? Trust me bhai, mindset sabse bada weapon hai."',
-    'Ashish Chanchlani': '"YEH KYA DEKH LIYA BC! Arre guys guys guys — imagine karo ki ye topic ek sketch hai aur hum sab isme fas gaye. What the hell yaar!"',
-    'CarryMinati': '"Toh kaise hain aap log? Aaj ka topic dekh ke maine socha — ye toh CRINGE hai bhai. Normie log ispe argue karte hain, main toh seedha point pe aata hoon."',
-    'Tanmay Bhat': '"Hmm interesting. Mujhe kya, main toh khana kha raha hoon. Lekin agar tu bol raha hai toh sun — vada pav ki tarah ye topic bhi hai, sabke muh mein rehta hai."',
-    'Zakir Khan': '"Sakht launda wo hota hai jo haqiqat jaanta hai. Yaar duniya mein sabse bada dard hai — jab log bina samjhe bolte hain. Chai piyo aur soch lo."',
-    'Biswa Kalyan Rath': '"Ek minute ruko. Ab suno. Dekho bhai, ye jo tum bol rahe ho na — ye toh galat hai. Logic se samjho, emotions se nahi."',
-    'Abhishek Upmanyu': '"Yaar ek baar mujhe hua tha — exact ye topic pe. BC ye toh relatable hai. Delhi mein sabse bada problem ye hai ki log bina soche bolte hain."',
-    'Kunal Kamra': '"Achha toh matlab... ye jo hai na, seedha fascism hai. Freedom of speech khatam ho gayi hai agar tum ye nahi samajh sakte."',
-    'Vir Das': '"Here\'s the thing about India — we have two of everything. Aur ye topic bhi usi ka hissa hai. Bhai ye toh global problem hai."',
-    'Sunil Grover': '"Arre waah! Kya baat hai! Gutthi kehti hai ki ye toh sabse bada mudda hai. Dr. Mashoor Gulati ka diagnosis hai — ye topic chronic hai."',
-    'Bharti Singh': '"HAHAHAHA haan ji suniye toh! Arre bhai ye toh hilarious hai. Oye ye kya ho raha hai — mujhe toh hasi aa rahi hai ye sun ke."',
-    'Kapil Sharma': '"Ki haal hai ji? Agge boliye. Arre yaar ye toh comedy ban gaya. Ha ha ha — ye toh Kapil Sharma Show pe hona chahiye tha."',
-    'Andrew Tate': '"What color is your Bugatti? The Matrix has you bhai. Imagine being this poor — couldn\'t be me. Ye topic hai hi nahi, ye toh mindset ka khel hai."',
-    'Dhruv Rathee': '"Dekhiye, facts check kijiye. Aur sabse important baat — data ye kehta hai. Educational video hai ye, dhyan se suno. Numbers jhooth nahi bolte."',
-    'Karan Johar': '"Honestly? OH MY GOD ye toh drama hai. Darling, cinema mein sab chalta hai lekin ye topic — ye toh real life ka blockbuster hai."',
-  }
-  return examples[name] || `"I am ${name} and this is my authentic voice."`
-}
-
 export async function callProvider(
   provider: AIProvider,
-  prompt: string,
-  apiKey: string
+  messages: ChatMessage[],
+  apiKey: string,
+  temperature = 0.9
 ): Promise<string> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 30000)
@@ -111,9 +21,9 @@ export async function callProvider(
       },
       body: JSON.stringify({
         model: provider.model,
-        messages: [{ role: 'user', content: prompt }],
+        messages,
         max_tokens: 500,
-        temperature: 0.92,
+        temperature,
       }),
     })
     clearTimeout(timeout)
@@ -139,9 +49,10 @@ export async function callProvider(
 }
 
 export async function callAI(
-  prompt: string,
+  messages: ChatMessage[],
   apiKeys: Record<string, string>,
-  preferredId?: string
+  preferredId?: string,
+  temperature = 0.9
 ): Promise<{ text: string; providerId: string }> {
   const available = PROVIDERS.filter(p => apiKeys[p.keyField]?.trim())
   if (available.length === 0) {
@@ -159,7 +70,7 @@ export async function callAI(
   let lastErr: Error | null = null
   for (const provider of available) {
     try {
-      const text = await callProvider(provider, prompt, apiKeys[provider.keyField])
+      const text = await callProvider(provider, messages, apiKeys[provider.keyField], temperature)
       return { text, providerId: provider.id }
     } catch (err) {
       lastErr = err instanceof Error ? err : new Error(String(err))

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useDebate } from '../DebateContext'
 import type { Character, Message } from '../types'
 import { avatarHtml, escapeHtml } from '../utils/helpers'
-import { buildContext, callAI } from '../utils/groq'
+import { runTurn } from '../engine/debateEngine'
+import { getDNA } from '../engine/dnaRegistry'
+import type { EmotionState } from '../engine/characterDNA'
 
 interface LocalMessage {
   charId: string
@@ -13,11 +15,23 @@ interface LocalMessage {
   color?: string
   round: number
   text: string
+  emotion?: EmotionState
+}
+
+const EMOTION_COLOR: Record<EmotionState, string> = {
+  calm: '#34d399', confident: '#06b6d4', annoyed: '#fb923c', angry: '#f87171',
+  sarcastic: '#a78bfa', inspired: '#fbbf24', disappointed: '#6b7280',
+}
+
+const STATUS_BY_PACING: Record<string, string> = {
+  'rapid-fire': 'firing back...',
+  measured: 'formulating a response...',
+  deliberate: 'reflecting...',
 }
 
 export default function ArenaScreen() {
-  const { topic, characters, maxRounds, style, length, language, apiKeys, activeProvider,
-    setMessages, setCurrentRound, setIsRunning, setIsPaused, setDebateComplete,
+  const { topic, characters, maxRounds, style, length, language, presentDayMode, apiKeys, activeProvider,
+    setMessages, setCurrentRound, setDebateComplete,
     goTo, finishDebate } = useDebate()
 
   const [localMessages, setLocalMessages] = useState<LocalMessage[]>([])
@@ -66,15 +80,18 @@ export default function ArenaScreen() {
       if (pausedRef.current) break
       setTypingChar(char)
       try {
-        const ctx = buildContext(char, topic, round, maxRounds, style, length, language, messagesRef.current as Message[])
-        const { text, providerId } = await callAI(ctx, apiKeys, activeProvider)
-        const finalText = (!text || text.trim().length === 0 || text === '...') 
-          ? `[${char.name} passed]` 
+        const { text, emotion } = await runTurn(
+          char, topic, round, maxRounds,
+          { style, length, language, presentDayMode },
+          messagesRef.current as Message[],
+          apiKeys, activeProvider
+        )
+        const finalText = (!text || text.trim().length === 0 || text === '...')
+          ? `[${char.name} passed]`
           : text
-        setLocalMessages(prev => [...prev, { charId: char.id, name: char.name, emoji: char.emoji, image: char.image, color: char.color, round, text: finalText }])
+        setLocalMessages(prev => [...prev, { charId: char.id, name: char.name, emoji: char.emoji, image: char.image, color: char.color, round, text: finalText, emotion }])
       } catch (err) {
         console.error('[Arena] Error:', char.name, err)
-        setLocalMessages(prev => [...prev, { charId: 'sys', text: `⚠️ ${char.name}: ${err instanceof Error ? err.message : 'API failed'}`, round }])
         setLocalMessages(prev => [...prev, { charId: 'sys', text: `⚠️ ${char.name}: ${err instanceof Error ? err.message : 'API failed'}`, round }])
         pausedRef.current = true
         setLocalPaused(true)
@@ -137,6 +154,8 @@ export default function ArenaScreen() {
   }
 
   const progress = currentRound > 0 ? ((currentRound - 1) / maxRounds) * 100 : 0
+  const typingDna = typingChar ? getDNA(typingChar) : null
+  const typingStatus = typingDna ? (STATUS_BY_PACING[typingDna.responsePacing] || 'thinking...') : 'thinking...'
 
   return (
     <motion.section
@@ -195,6 +214,13 @@ export default function ArenaScreen() {
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="font-mono text-sm font-medium" style={{ color: msg.color }}>{msg.name}</span>
                   <span className="font-mono text-[0.625rem] text-text-tertiary">R{msg.round}</span>
+                  {msg.emotion && (
+                    <span
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                      style={{ background: EMOTION_COLOR[msg.emotion] }}
+                      title={msg.emotion}
+                    />
+                  )}
                 </div>
                 <div className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg bg-white/4 border border-border-subtle text-sm leading-relaxed text-text-primary" style={{ borderLeft: `3px solid ${msg.color}` }} dangerouslySetInnerHTML={{ __html: escapeHtml(msg.text) }} />
               </div>
@@ -209,6 +235,7 @@ export default function ArenaScreen() {
             <div className="flex-1">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="font-mono text-sm font-medium" style={{ color: typingChar.color }}>{typingChar.name}</span>
+                <span className="font-mono text-[0.625rem] text-text-tertiary italic">{typingStatus}</span>
               </div>
               <div className="inline-flex gap-1 px-4 py-3 rounded-tr-lg rounded-br-lg rounded-bl-lg bg-white/4 border border-border-subtle" style={{ borderLeft: `3px solid ${typingChar.color}` }}>
                 {[0, 1, 2].map(i => (

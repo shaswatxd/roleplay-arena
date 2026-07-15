@@ -176,7 +176,7 @@ function SelectedCharacters({ characters, onRemove }: { characters: Character[];
 
 function SettingsSection() {
   const { maxRounds, setMaxRounds, style, setStyle, length, setLength, language, setLanguage,
-    activeProvider, setActiveProvider } = useDebate()
+    presentDayMode, setPresentDayMode, activeProvider, setActiveProvider } = useDebate()
 
   const providerOpts: Record<string, string> = {}
   for (const p of PROVIDERS) {
@@ -197,6 +197,10 @@ function SettingsSection() {
         options={{ english:'English', hinglish:'Hinglish (Hindi+English)', hindi:'Pure Hindi', urdu:'Urdu' } as Record<string, string>} />
       <SettingsSelect label="AI Provider" value={activeProvider} onChange={setActiveProvider}
         options={providerOpts} />
+      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+        <input type="checkbox" checked={presentDayMode} onChange={e => setPresentDayMode(e.target.checked)} className="w-4 h-4 accent-accent cursor-pointer" />
+        <span className="text-sm text-text-secondary">Present-day mode <span className="text-text-tertiary">(historical figures argue with full awareness of today's world, instead of through their own era's lens)</span></span>
+      </label>
     </div>
   )
 }
@@ -236,7 +240,7 @@ function CustomCharModal({ onClose }: { onClose: () => void }) {
   const [image, setImage] = useState<string | undefined>(undefined)
   const [detected, setDetected] = useState(false)
   const [detecting, setDetecting] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     if (name.trim().length < 3) {

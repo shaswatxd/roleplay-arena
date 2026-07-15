@@ -15,6 +15,11 @@ export interface Message {
 
 export type ScreenName = 'landing' | 'setup' | 'arena' | 'results'
 
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
 export interface DebateContextType {
   screen: ScreenName
   goTo: (s: ScreenName) => void
@@ -32,16 +37,12 @@ export interface DebateContextType {
   setLength: (s: string) => void
   language: string
   setLanguage: (s: string) => void
+  presentDayMode: boolean
+  setPresentDayMode: (b: boolean) => void
   currentRound: number
   setCurrentRound: (n: number) => void
   messages: Message[]
   setMessages: (msgs: Message[]) => void
-  isRunning: boolean
-  setIsRunning: (b: boolean) => void
-  isPaused: boolean
-  setIsPaused: (b: boolean) => void
-  pausedRef: MutableRefObject<boolean>
-  runningRef: MutableRefObject<boolean>
   debateComplete: boolean
   setDebateComplete: (b: boolean) => void
   summary: string
@@ -51,9 +52,6 @@ export interface DebateContextType {
   activeProvider: string
   setActiveProvider: (id: string) => void
   startDebate: () => Promise<void>
-  nextRound: () => void
-  togglePause: () => void
   finishDebate: () => void
   emitToast: MutableRefObject<((msg: string, type?: string) => void) | null>
-  generateDebateMessages: () => Promise<Message[]>
 }

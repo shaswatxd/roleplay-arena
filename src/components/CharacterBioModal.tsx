@@ -1,30 +1,18 @@
 import { motion } from 'framer-motion'
 import { avatarHtml } from '../utils/helpers'
 import type { Character } from '../data/presets'
-
-const SAMPLE_QUOTES: Record<string, string[]> = {
-  'samay': ['Ye toh blunder hai bhai', 'Checkmate kar diya soch ko', 'Chess mein aur life mein dono mein L lagne wale hain'],
-  'ranveer': ['So guys, let me tell you something', 'The real question is — are you disciplined enough?', 'Your mindset is your biggest asset bhai'],
-  'ashish': ['YEH KYA DEKH LIYA BC!', 'Guys guys guys — imagine karo ye hota', 'What the hell yaar ye toh next level hai'],
-  'carry': ['Toh kaise hain aap log', 'Yeh kya dekh liya — CRINGE', 'Normie ho tum sab, triggered mat ho'],
-  'tanmay': ['Hmm interesting... mujhe kya main toh khana kha raha hoon', 'Bro ye toh savage hai', 'Okay fair enough... but vada pav kab khayenge?'],
-  'zakir': ['Sakht launda wo hota hai jo... haqiqat jaanta hai', 'Yaar duniya mein sabse bada dard hai...', 'Chai piyo aur soch lo'],
-  'biswa': ['Ek minute ruko... ab suno', 'Hmm ye toh interesting hai, lekin galat hai', 'Dekho bhai,逻辑 se samjho'],
-  'upmanyu': ['Yaar ek baar mujhe hua tha...', 'BC ye toh relatable hai', 'Delhi mein sabse bada problem ye hai...'],
-  'kunal': ['Achha toh matlab...?', 'Ye jo hai na, fascism hai seedha', 'Freedom of speech khatam ho gayi hai'],
-  'vir': ['Here\'s the thing about India — we have two of everything', 'Bhai ye toh global problem hai', 'The duality is fascinating'],
-  'sunil': ['Arre waah! Kya baat hai!', 'Gutthi kehti hai ki...', 'Dr. Mashoor Gulati ka diagnosis hai ye'],
-  'bharti': ['HAHAHAHA haan ji suniye toh', 'Arre bhai ye toh hilarious hai', 'Oye ye kya ho raha hai'],
-  'kapil': ['Ki haal hai ji? Agge boliye', 'Arre yaar ye toh comedy ban gaya', 'Ha ha ha — ye toh Kapil Sharma Show pe hona chahiye'],
-  'tate': ['What color is your Bugatti?', 'The Matrix has you bhai', 'Imagine being this poor — couldn\'t be me'],
-  'dhruv': ['Dekhiye, facts check kijiye', 'Aur sabse important baat — data ye kehta hai', 'Educational video hai ye, dhyan se suno'],
-  'karan': ['Honestly? OH MY GOD ye toh drama hai', 'Darling, cinema mein sab chalta hai', 'Yaar mujhe lagta hai ki... this is just wrong'],
-}
+import { getDNA } from '../engine/dnaRegistry'
 
 export default function CharacterBioModal({ character, onClose }: { character: Character; onClose: () => void }) {
-  const quotes = SAMPLE_QUOTES[character.id] || [
-    character.style.split('.')[0] + '.',
-    character.role + '.',
+  const dna = getDNA(character)
+  const quotes = dna.favoritePhrases.length > 0
+    ? dna.favoritePhrases
+    : [character.style.split('.')[0] + '.', character.role + '.']
+  const traits: [string, number][] = [
+    ['Confidence', dna.traits.confidence],
+    ['Aggression', dna.traits.aggression],
+    ['Humor', dna.traits.humor],
+    ['Sarcasm', dna.traits.sarcasm],
   ]
 
   return (
@@ -67,6 +55,24 @@ export default function CharacterBioModal({ character, onClose }: { character: C
               <span className="font-mono text-xs font-medium text-text-secondary uppercase tracking-wider">Speaking Style</span>
             </div>
             <div className="text-sm leading-relaxed text-text-primary">{character.style}</div>
+          </div>
+
+          <div className="bg-bg-glass border border-border-subtle rounded-xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm">📊</span>
+              <span className="font-mono text-xs font-medium text-text-secondary uppercase tracking-wider">Traits</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {traits.map(([label, value]) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className="text-xs text-text-tertiary w-20 flex-shrink-0">{label}</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${value}%`, background: character.color }} />
+                  </div>
+                  <span className="text-[0.6875rem] font-mono text-text-tertiary w-7 text-right flex-shrink-0">{value}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="bg-bg-glass border border-border-subtle rounded-xl p-4 flex flex-col gap-2">
